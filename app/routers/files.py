@@ -50,9 +50,10 @@ async def upload_files(
     await db.commit()
     await db.refresh(new_share)
     
-    # Hardcode forwarded host for now or use config. 
-    # Since we want users to hit port 3000, we force it here.
-    base_url = "http://localhost:3000/" 
+    import os
+    base_url = os.getenv("BASE_URL", "http://localhost:3000")
+    if not base_url.endswith("/"):
+        base_url += "/"
     share_link = f"{base_url}download/{new_share.public_id}"
     
     # Construct response manually to avoid validation issues with lazy loading
