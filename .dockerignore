@@ -1,0 +1,22 @@
+# Avoid sending large or sensitive files to the Docker daemon
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.DS_Store
+
+# Frontend build artifacts
+frontend/node_modules
+frontend/dist
+
+# Persistent data and uploads
+files/
+postgres_data/
+
+# Documentation and notes
+/Users/pgren/.gemini/antigravity/brain
+walkthrough.md
+implementation_plan.md
+task.md

@@ -20,8 +20,15 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
 
     try {
         const response = await fetch(`${API_URL}${endpoint}`, config);
-        const data = await response.json();
 
+        // Handle non-JSON responses (like Nginx errors)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}...`);
+        }
+
+        const data = await response.json();
         if (!response.ok) {
             throw new Error(data.detail || 'API Request Failed');
         }
@@ -33,7 +40,6 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
 
 export async function uploadFiles(files, token) {
     const formData = new FormData();
-    // 'files' is a FileList or array of Files
     for (let i = 0; i < files.length; i++) {
         formData.append('files', files[i]);
     }
@@ -45,6 +51,13 @@ export async function uploadFiles(files, token) {
         },
         body: formData
     });
+
+    // Handle non-JSON responses
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Upload failed with non-JSON response (${response.status}): ${text.substring(0, 100)}...`);
+    }
 
     const data = await response.json();
     if (!response.ok) {
