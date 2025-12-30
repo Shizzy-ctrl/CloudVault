@@ -50,7 +50,6 @@ async def upload_files(
     await db.commit()
     await db.refresh(new_share)
     
-    import os
     base_url = os.getenv("BASE_URL", "http://localhost:3000")
     if not base_url.endswith("/"):
         base_url += "/"
