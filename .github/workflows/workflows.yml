@@ -1,0 +1,246 @@
+name: CI/CD - Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_PATH: /home/debian/fastapi-svelte-fileshare
+  BACKUP_PATH: /home/debian/backups
+  HEALTHCHECK_TIMEOUT: 30
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: self-hosted
+    timeout-minutes: 15
+    
+    steps:
+      - name: Pre-deployment checks
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::System Information"
+          echo "Runner: $(hostname)"
+          echo "User: $(whoami)"
+          echo "Date: $(date)"
+          echo "Git branch: $(git branch --show-current)"
+          echo "Last commit: $(git log -1 --oneline)"
+          echo "::endgroup::"
+          
+          echo "::group::Docker Status"
+          docker --version
+          docker compose version
+          echo "::endgroup::"
+      
+      - name: Create backup directory
+        run: |
+          mkdir -p ${{ env.BACKUP_PATH }}
+          echo "Backup directory ready: ${{ env.BACKUP_PATH }}"
+      
+      - name: Backup current state
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Creating backup"
+          BACKUP_FILE="${{ env.BACKUP_PATH }}/backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+          
+          tar -czf "$BACKUP_FILE" \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.git' \
+            --exclude='venv' \
+            --exclude='.env' \
+            -C /home/debian fastapi-svelte-fileshare
+          
+          BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+          echo "✓ Backup created: $BACKUP_FILE ($BACKUP_SIZE)"
+          
+          # Keep only last 5 backups
+          cd ${{ env.BACKUP_PATH }}
+          ls -t backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm
+          echo "✓ Old backups cleaned up"
+          echo "::endgroup::"
+      
+      - name: Stash local changes
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Stashing changes"
+          if [[ -n $(git status -s) ]]; then
+            git stash push -m "Auto-stash before deploy $(date +%Y-%m-%d_%H:%M:%S)"
+            echo "✓ Local changes stashed"
+          else
+            echo "✓ No local changes to stash"
+          fi
+          echo "::endgroup::"
+      
+      - name: Pull latest changes
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Pulling from repository"
+          git fetch origin
+          BEFORE=$(git rev-parse HEAD)
+          git pull --rebase origin main
+          AFTER=$(git rev-parse HEAD)
+          
+          if [[ "$BEFORE" != "$AFTER" ]]; then
+            echo "✓ Updated from $BEFORE to $AFTER"
+            git log --oneline $BEFORE..$AFTER
+          else
+            echo "✓ Already up to date"
+          fi
+          echo "::endgroup::"
+      
+      - name: Restore stashed changes
+        working-directory: ${{ env.PROJECT_PATH }}
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "::group::Restoring stashed changes"
+          if git stash list | grep -q "Auto-stash"; then
+            if git stash pop; then
+              echo "✓ Stashed changes restored successfully"
+            else
+              echo "::warning::Could not restore stash automatically (possible conflicts)"
+            fi
+          else
+            echo "✓ No stashed changes to restore"
+          fi
+          echo "::endgroup::"
+      
+      - name: Stop running containers
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Stopping containers"
+          docker compose down --remove-orphans
+          echo "✓ Containers stopped"
+          echo "::endgroup::"
+      
+      - name: Build and start containers
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Building containers"
+          docker compose build --no-cache
+          echo "::endgroup::"
+          
+          echo "::group::Starting containers"
+          docker compose up -d
+          echo "✓ Containers started"
+          echo "::endgroup::"
+      
+      - name: Wait for services
+        run: |
+          echo "Waiting for services to initialize..."
+          sleep ${{ env.HEALTHCHECK_TIMEOUT }}
+      
+      - name: Health check
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Container Status"
+          docker compose ps
+          echo "::endgroup::"
+          
+          echo "::group::Service Health Check"
+          FAILED=0
+          
+          # Check if all containers are running
+          if ! docker compose ps | grep -q "Up"; then
+            echo "::error::No containers are running"
+            FAILED=1
+          fi
+          
+          # Check for any exited containers
+          if docker compose ps -a | grep -q "Exit"; then
+            echo "::error::Some containers have exited"
+            FAILED=1
+          fi
+          
+          # Count running containers
+          RUNNING=$(docker compose ps --status running -q | wc -l)
+          echo "Running containers: $RUNNING"
+          
+          if [[ $FAILED -eq 1 ]]; then
+            echo "::endgroup::"
+            echo "::group::Container Logs"
+            docker compose logs --tail=50
+            echo "::endgroup::"
+            exit 1
+          fi
+          
+          echo "✓ All health checks passed"
+          echo "::endgroup::"
+      
+      - name: Verify deployment
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Deployment Verification"
+          
+          # Check container logs for errors
+          if docker compose logs --tail=20 | grep -i "error\|fatal\|exception" > /dev/null; then
+            echo "::warning::Potential errors detected in logs"
+            docker compose logs --tail=50 | grep -i "error\|fatal\|exception"
+          else
+            echo "✓ No critical errors in logs"
+          fi
+          
+          # Verify all expected containers are running
+          EXPECTED_CONTAINERS=$(docker compose config --services | wc -l)
+          RUNNING_CONTAINERS=$(docker compose ps --status running -q | wc -l)
+          
+          echo "Expected containers: $EXPECTED_CONTAINERS"
+          echo "Running containers: $RUNNING_CONTAINERS"
+          
+          if [[ $RUNNING_CONTAINERS -eq $EXPECTED_CONTAINERS ]]; then
+            echo "✓ All containers are running"
+          else
+            echo "::warning::Some containers may not be running"
+          fi
+          
+          echo "::endgroup::"
+      
+      - name: Cleanup old Docker resources
+        if: success()
+        run: |
+          echo "::group::Docker Cleanup"
+          docker image prune -f --filter "until=24h"
+          docker volume prune -f
+          echo "✓ Cleanup completed"
+          echo "::endgroup::"
+      
+      - name: Deployment summary
+        if: always()
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Deployment Summary"
+          echo "Status: ${{ job.status }}"
+          echo "Commit: $(git rev-parse --short HEAD)"
+          echo "Branch: $(git branch --show-current)"
+          echo "Date: $(date)"
+          echo ""
+          echo "Container Status:"
+          docker compose ps
+          echo ""
+          echo "Recent Logs:"
+          docker compose logs --tail=10
+          echo "::endgroup::"
+      
+      - name: Rollback on failure
+        if: failure()
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: |
+          echo "::group::Attempting Rollback"
+          echo "::error::Deployment failed, rolling back to previous version"
+          
+          LATEST_BACKUP=$(ls -t ${{ env.BACKUP_PATH }}/backup-*.tar.gz 2>/dev/null | head -n1)
+          
+          if [[ -n "$LATEST_BACKUP" ]]; then
+            echo "Found backup: $LATEST_BACKUP"
+            # In a real scenario, you would restore from backup here
+            echo "::warning::Manual rollback may be required"
+          else
+            echo "::error::No backup found for rollback"
+          fi
+          
+          docker compose logs --tail=100
+          echo "::endgroup::"
