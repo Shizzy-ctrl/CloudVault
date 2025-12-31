@@ -14,26 +14,41 @@ async def cleanup_expired_files():
             async with AsyncSessionLocal() as db:
                 now = datetime.utcnow()
                 # Eager load files to delete them
-                result = await db.execute(select(Share).where(Share.expires_at < now).options(selectinload(Share.files)))
-                expired_shares = result.scalars().all()
+                result = await db.execute(
+                    select(Share)
+                    .where(Share.expires_at != None)
+                    .where(Share.expires_at < now)
+                    .options(selectinload(Share.files))
+                )
+                expired_shares = result.scalars().unique().all()
+                
+                if expired_shares:
+                    print(f"[{now}] Found {len(expired_shares)} expired shares to clean up.")
                 
                 for share in expired_shares:
-                    print(f"Deleting expired share: {share.public_id}")
+                    print(f"Processing cleanup for share: {share.public_id}")
                     for file_record in share.files:
-                        if file_record.file_path and os.path.exists(file_record.file_path):
+                        path_to_delete = file_record.file_path
+                        if path_to_delete and os.path.exists(path_to_delete):
                             try:
-                                os.remove(file_record.file_path)
-                                print(f"Deleted file: {file_record.file_path}")
-                            except OSError as e:
-                                print(f"Error deleting file {file_record.file_path}: {e}")
+                                os.remove(path_to_delete)
+                                print(f"  - Physically deleted file: {path_to_delete}")
+                            except Exception as e:
+                                print(f"  - FAILED to delete file {path_to_delete}: {e}")
+                        else:
+                            print(f"  - File already gone or path missing: {path_to_delete}")
                     
                     # Delete the share (cascade deletes file records in DB)
                     await db.delete(share)
+                    print(f"  - Deleted share record {share.public_id} from database")
                 
                 if expired_shares:
                     await db.commit()
+                    print(f"[{now}] Cleanup committed successfully.")
                     
         except Exception as e:
             print(f"Error in cleanup task: {e}")
+            import traceback
+            traceback.print_exc()
         
         await asyncio.sleep(60)

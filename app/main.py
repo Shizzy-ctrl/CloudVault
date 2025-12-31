@@ -43,6 +43,8 @@ from sqlalchemy.exc import IntegrityError
 
 class UserAdmin(ModelView):
     identity = "user"
+    label = "Users"
+    icon = "fa fa-users"
     column_list = ["id", "username", "is_active", "is_superuser", "must_change_password"]
     exclude_fields_from_create = ["hashed_password", "must_change_password", "shares"]
     exclude_fields_from_edit = ["hashed_password", "must_change_password", "shares"]
@@ -85,10 +87,14 @@ class UserAdmin(ModelView):
 
 class ShareAdmin(ModelView):
     identity = "share"
-    column_list = ["id", "public_id", "created_at", "expires_at"]
+    label = "Shares"
+    icon = "fa fa-share-alt"
+    column_list = ["id", "public_id", "owner", "created_at", "expires_at", "is_shared", "files"]
 
 class FileAdmin(ModelView):
-    identity = "file"
+    identity = "file-record"
+    label = "Files"
+    icon = "fa fa-file"
     column_list = ["id", "filename", "share_id"]
 
 admin = Admin(engine, title="File Sharing Admin", templates_dir="app/templates_admin")
