@@ -1,6 +1,6 @@
-# FileShare Frontend - React 19
+# CloudVault Frontend - React 19
 
-A modern React 19 frontend for the FileShare application with TypeScript, Tailwind CSS, and shadcn/ui components.
+A modern React 19 frontend for the CloudVault application with TypeScript, Tailwind CSS, and shadcn/ui components.
 
 ## Features
 

@@ -6,7 +6,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Alert, AlertDescription } from './ui/alert'
-import { Upload, LogOut, Link, Clock, Lock, FileText, Folder } from 'lucide-react'
+import { Upload, LogOut, Link, Clock, Lock, FileText, Folder, Cloud, Sparkles, Shield, Zap } from 'lucide-react'
 
 interface ShareResult {
   public_id: string;
@@ -79,98 +79,129 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-zinc-900 p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        
-        <header className="flex justify-between items-center bg-white dark:bg-zinc-950 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FileShare</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Welcome back, {user?.username}</p>
-          </div>
-          <Button 
-            onClick={logout}
-            variant="outline"
-            className="flex items-center gap-2 text-red-600 hover:text-red-700"
-          >
-            <LogOut size={16} />
-            Logout
-          </Button>
-        </header>
-
-        <section className="bg-white dark:bg-zinc-950 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 dark:text-white">
-            <Upload size={20} />
-            Upload Files
-          </h2>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      {/* Animated background elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-40 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+      </div>
+      
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-20" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      }}></div>
+      
+      {/* Main content */}
+      <div className="relative z-10 min-h-screen p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-900 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                  <Folder className="w-12 h-12 mb-4 text-gray-400" />
-                  {files && files.length > 0 ? (
-                    <>
-                      <p className="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">{files.length} file(s) selected</p>
-                      <ul className="text-xs text-gray-400 max-h-32 overflow-y-auto">
-                        {Array.from(files).map((f, index) => (
-                          <li key={index}>{f.name}</li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Select multiple files at once</p>
-                    </>
-                  )}
-                </div>
-                <input 
-                  ref={fileInputRef}
-                  type="file" 
-                  multiple 
-                  className="hidden" 
-                  onChange={handleFileChange} 
-                />
-              </label>
-            </div> 
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
+          {/* Header */}
+          <header className="flex justify-between items-center bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-white/20 to-white/10 rounded-xl border border-white/30 shadow-lg transform hover:scale-105 transition-all duration-300">
+                <Cloud className="w-10 h-10 text-white drop-shadow-lg" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-black text-white flex items-center gap-2 tracking-tight">
+                  Cloud
+                  <span className="bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent">Vault</span>
+                  <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse drop-shadow-lg" />
+                </h1>
+                <p className="text-white/90 font-medium">Welcome back, {user?.username}</p>
+              </div>
+            </div>
             <Button 
-              onClick={handleUpload} 
-              disabled={!files || isLoading}
-              className="w-full relative"
+              onClick={logout}
+              variant="outline"
+              className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200"
             >
-              {isLoading && (
-                <div className="absolute inset-0 bg-background/50 rounded-md flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                </div>
-              )}
-              <span className={isLoading ? 'opacity-50' : ''}>
-                {isLoading ? 'Uploading...' : 'Upload Files'}
-              </span>
+              <LogOut size={16} />
+              Logout
             </Button>
-          </div>
-        </section>
+          </header>
+
+          {/* Upload Section */}
+          <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3 text-white">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Upload size={20} className="text-white" />
+              </div>
+              Upload Files
+              <Zap className="w-5 h-5 text-yellow-300 animate-pulse" />
+            </h2>
+          
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-white/30 border-dashed rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition-all duration-200 backdrop-blur-sm">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                    <Folder className="w-16 h-16 mb-4 text-white/60" />
+                    {files && files.length > 0 ? (
+                      <>
+                        <p className="mb-2 text-sm text-white/80 font-semibold">{files.length} file(s) selected</p>
+                        <ul className="text-xs text-white/60 max-h-32 overflow-y-auto">
+                          {Array.from(files).map((f, index) => (
+                            <li key={index}>{f.name}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mb-2 text-sm text-white/80"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                        <p className="text-xs text-white/60">Select multiple files at once</p>
+                      </>
+                    )}
+                  </div>
+                  <input 
+                    ref={fileInputRef}
+                    type="file" 
+                    multiple 
+                    className="hidden" 
+                    onChange={handleFileChange} 
+                  />
+                </label>
+              </div> 
+
+              {error && (
+                <Alert className="bg-red-500/20 border-red-500/50 text-white">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button 
+                onClick={handleUpload} 
+                disabled={!files || isLoading}
+                className="w-full bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg relative"
+              >
+                {isLoading && (
+                  <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
+                  </div>
+                )}
+                <span className={isLoading ? 'opacity-50' : ''}>
+                  {isLoading ? 'Uploading...' : 'Upload Files'}
+                </span>
+              </Button>
+            </div>
+          </section>
 
         {uploadResult && (
-          <section className="bg-white dark:bg-zinc-950 p-6 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-6 pb-6 border-b border-gray-100 dark:border-zinc-800">
-              <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-2">Share Created!</h3>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-zinc-900 rounded-md border border-gray-200 dark:border-zinc-700 mb-4">
-                <Link size={16} className="text-gray-500" />
-                <a href={uploadResult.share_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm break-all">{uploadResult.share_link}</a>
+          <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-6 pb-6 border-b border-white/10">
+              <h3 className="text-xl font-semibold text-green-300 mb-2 flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Share Created Successfully!
+              </h3>
+              <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10 mb-4">
+                <Link size={16} className="text-white/60" />
+                <a href={uploadResult.share_link} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 text-sm break-all">{uploadResult.share_link}</a>
               </div>
 
-              <div className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-md">
-                <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Files in this Share:</h4>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                <h4 className="text-sm font-semibold mb-2 text-white/80">Files in this Share:</h4>
                 <ul className="space-y-1">
                   {uploadResult.files.map((file, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li key={index} className="flex items-center gap-2 text-sm text-white/60">
                       <FileText size={14} /> {file.filename}
                     </li>
                   ))}
@@ -179,11 +210,14 @@ export default function Dashboard() {
             </div>
             
             <div className="space-y-4">
-              <h4 className="text-md font-medium dark:text-white">Share Settings</h4>
+              <h4 className="text-md font-medium text-white flex items-center gap-2">
+                <Lock size={16} />
+                Share Settings
+              </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 text-white/80">
                     <Lock size={16} /> Password Protection (Optional)
                   </Label>
                   <Input 
@@ -191,20 +225,21 @@ export default function Dashboard() {
                     value={shareSettings.password}
                     onChange={(e) => setShareSettings(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Set a password"
+                    className="bg-white/20 border-white/30 text-white placeholder-white/80 focus:border-white/50 focus:ring-white/30 font-medium"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 text-white/80">
                     <Clock size={16} /> Expiration Time
                   </Label>
                   <Select 
                     value={shareSettings.expires_minutes}
                     onValueChange={(value) => setShareSettings(prev => ({ ...prev, expires_minutes: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white/20 border-white/30 text-white font-medium">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white/20 border-white/30 text-white backdrop-blur-lg">
                       <SelectItem value="5">5 minutes</SelectItem>
                       <SelectItem value="15">15 minutes</SelectItem>
                       <SelectItem value="30">30 minutes</SelectItem>
@@ -220,12 +255,11 @@ export default function Dashboard() {
               <Button 
                 onClick={updateShareSettings}
                 disabled={isUpdatingSettings}
-                variant="secondary"
-                className="flex items-center gap-2 relative"
+                className="bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg flex items-center gap-2 relative"
               >
                 {isUpdatingSettings && (
-                  <div className="absolute inset-0 bg-secondary/50 rounded-md flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
                   </div>
                 )}
                 <span className={isUpdatingSettings ? 'opacity-50' : ''}>
@@ -234,8 +268,8 @@ export default function Dashboard() {
               </Button>
               
               {shareUpdateMsg && (
-                <Alert className={shareUpdateMsg.includes('Error') ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950' : 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'}>
-                  <AlertDescription className={shareUpdateMsg.includes('Error') ? 'text-red-700 dark:text-red-300' : 'text-green-700 dark:text-green-300'}>
+                <Alert className={shareUpdateMsg.includes('Error') ? 'bg-red-500/20 border-red-500/50 text-white' : 'bg-green-500/20 border-green-500/50 text-white'}>
+                  <AlertDescription>
                     {shareUpdateMsg}
                   </AlertDescription>
                 </Alert>
@@ -243,8 +277,22 @@ export default function Dashboard() {
             </div>
           </section>
         )}
-
+        </div>
       </div>
+      
+      {/* Custom styles for animations */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 0.4; }
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   )
 }

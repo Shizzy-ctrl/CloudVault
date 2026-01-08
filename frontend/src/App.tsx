@@ -10,7 +10,7 @@ function App() {
   const { isAuthenticated, mustChangePassword } = useAuth()
 
   return (
-    <div className="antialiased text-gray-900 bg-gray-50 dark:bg-zinc-900 dark:text-gray-100 min-h-screen font-sans">
+    <div className="antialiased text-gray-900 min-h-screen font-sans">
       <ErrorBoundary>
         <Routes>
           <Route 
@@ -27,10 +27,7 @@ function App() {
               isAuthenticated ? (
                 <Navigate to="/" replace />
               ) : (
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-4xl font-extrabold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">FileShare App</h1>
-                  <Login />
-                </div>
+                <Login />
               )
             } 
           />
