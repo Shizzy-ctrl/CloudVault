@@ -1,43 +1,115 @@
-# Svelte + Vite
+# FileShare Frontend - React 19
 
-This template should help get you started developing with Svelte in Vite.
+A modern React 19 frontend for the FileShare application with TypeScript, Tailwind CSS, and shadcn/ui components.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- **React 19** with latest features including the `use` hook
+- **TypeScript** for type safety and better developer experience
+- **React Router 7** for client-side routing
+- **shadcn/ui** components for beautiful, accessible UI
+- **Component-based architecture** with modern React hooks
+- **Custom hooks** for data fetching and state management
+- **Error Boundaries** for better error handling
+- **Suspense** for loading states
+- **Tailwind CSS** for styling
+- **Environment configuration** with Vite
+- **Vite** for fast development and building
 
-## Need an official Svelte framework?
+## Getting Started
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+### Prerequisites
 
-## Technical considerations
+- Node.js 18+ 
+- npm or yarn
 
-**Why use this over SvelteKit?**
+### Installation
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+1. Install dependencies:
+```bash
+npm install
 ```
+
+2. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+### Building
+
+To build the application for production:
+
+```bash
+npm run build
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ui/             # shadcn/ui components
+│   ├── Login.tsx       # Login component
+│   ├── Dashboard.tsx   # Dashboard component
+│   ├── Download.tsx    # Download component
+│   ├── ChangePassword.tsx # Change password component
+│   └── ErrorBoundary.tsx # Error boundary component
+├── hooks/              # Custom React hooks
+│   ├── useAuth.tsx     # Authentication hook
+│   └── useApi.ts       # API hook
+├── lib/                # Utility functions
+│   ├── api.ts          # API utilities
+│   └── utils.ts        # General utilities
+├── App.tsx             # Main app component
+├── main.tsx            # Entry point
+└── index.css           # Global styles
+```
+
+## Key Technologies
+
+- **React 19**: Latest React with new features
+- **TypeScript**: Type-safe JavaScript
+- **Vite**: Fast build tool and dev server
+- **Tailwind CSS**: Utility-first CSS framework
+- **shadcn/ui**: High-quality component library
+- **React Router 7**: Client-side routing
+- **Lucide React**: Icon library
+
+## Features Implemented
+
+- Authentication with JWT tokens
+- File upload with progress tracking
+- Share creation with password protection and expiration
+- Password change functionality
+- Download functionality (placeholder)
+- Responsive design
+- Dark mode support
+- Error handling and loading states
+- Form validation
+
+## Environment Variables
+
+- `VITE_API_URL`: Backend API URL (default: `/api`)
+
+## Development
+
+The project uses modern React patterns:
+
+- **Hooks**: useState, useEffect, useContext, useReducer
+- **Error Boundaries**: Class components for error handling
+- **Suspense**: For loading states
+- **TypeScript**: For type safety
+- **Component Composition**: Reusable UI components

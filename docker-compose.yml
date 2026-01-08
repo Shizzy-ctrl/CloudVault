@@ -16,7 +16,7 @@ services:
   web:
     build: .
     ports:
-      - "8000:8000"
+      - "10.0.0.0:8000:8000"
     volumes:
       - ./files:/app/files
       - ./logs:/app/logs
@@ -31,7 +31,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:5173"
     depends_on:
       - web
 
