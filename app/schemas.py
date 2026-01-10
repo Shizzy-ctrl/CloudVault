@@ -38,6 +38,17 @@ class ShareResponse(BaseModel):
     files: List[FileResponse]
     expires_at: Optional[datetime]
     password_protected: bool
+    created_at: Optional[datetime] = None
+    is_shared: Optional[bool] = None
+
+class ShareListItem(BaseModel):
+    public_id: str
+    share_link: str
+    file_count: int
+    expires_at: Optional[datetime]
+    password_protected: bool
+    created_at: Optional[datetime]
+    is_shared: bool
 
 class ShareUpdate(BaseModel):
     password: Optional[str] = None

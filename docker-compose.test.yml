@@ -13,19 +13,10 @@ services:
       timeout: 5s
       retries: 5
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "10.0.0.1:16686:16686"
-      - "10.0.0.1:14268:14268"
-      - "10.0.0.1:14250:14250"
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-
   web:
     build: .
     ports:
-      - "10.0.0.1:8000:8000"
+      - "8000:8000"
     volumes:
       - ./files:/app/files
       - ./logs:/app/logs
@@ -33,19 +24,14 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/filesharing
       - SECRET_KEY=supersecretkeychangedthisinproduction
-      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - OTEL_SERVICE_NAME=fileshare-backend
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=fileshare-backend
     depends_on:
       db:
         condition: service_healthy
-      jaeger:
-        condition: service_started
 
   frontend:
     build: ./frontend
     ports:
-      - "127.0.0.1:3000:5173"
+      - "3000:5173"
     depends_on:
       - web
 

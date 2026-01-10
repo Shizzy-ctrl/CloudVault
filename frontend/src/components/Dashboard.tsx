@@ -6,7 +6,21 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Alert, AlertDescription } from './ui/alert'
-import { Upload, LogOut, Link, Clock, Lock, FileText, Folder, Cloud, Sparkles, Shield, Zap } from 'lucide-react'
+import ShareList from './ShareList'
+import ShareDetails from './ShareDetails'
+import { Upload, LogOut, Link, Clock, Lock, FileText, Folder, Cloud, Sparkles, Shield, Zap, List } from 'lucide-react'
+
+// Unified Share interface that works for both components
+export interface Share {
+  public_id: string
+  share_link: string
+  files: Array<{ id: number; filename: string }>
+  file_count?: number
+  expires_at: string | null
+  password_protected: boolean
+  created_at: string
+  is_shared: boolean
+}
 
 interface ShareResult {
   public_id: string;
@@ -27,6 +41,8 @@ export default function Dashboard() {
   const [shareUpdateMsg, setShareUpdateMsg] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+  const [currentView, setCurrentView] = useState<'upload' | 'shares'>('upload')
+  const [selectedShare, setSelectedShare] = useState<Share | null>(null)
 
   async function handleUpload() {
     if (!files || files.length === 0) return
@@ -78,6 +94,20 @@ export default function Dashboard() {
     setFiles(e.target.files)
   }
 
+  const handleShareSelect = (share: Share) => {
+    setSelectedShare(share)
+  }
+
+  const handleBackToShares = () => {
+    setSelectedShare(null)
+  }
+
+  const handleShareUpdated = () => {
+    if (selectedShare) {
+      // The ShareList component will handle refreshing
+    }
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
       {/* Animated background elements */}
@@ -111,172 +141,263 @@ export default function Dashboard() {
                 <p className="text-white/90 font-medium">Welcome back, {user?.username}</p>
               </div>
             </div>
-            <Button 
-              onClick={logout}
-              variant="outline"
-              className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200"
-            >
-              <LogOut size={16} />
-              Logout
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-1">
+                <Button
+                  onClick={() => setCurrentView('upload')}
+                  variant={currentView === 'upload' ? 'default' : 'ghost'}
+                  className={`flex items-center gap-2 ${
+                    currentView === 'upload' 
+                      ? 'bg-white text-purple-900' 
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Upload size={16} />
+                  Upload
+                </Button>
+                <Button
+                  onClick={() => setCurrentView('shares')}
+                  variant={currentView === 'shares' ? 'default' : 'ghost'}
+                  className={`flex items-center gap-2 ${
+                    currentView === 'shares' 
+                      ? 'bg-white text-purple-900' 
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                >
+                  <List size={16} />
+                  My Shares
+                </Button>
+              </div>
+              <Button 
+                onClick={logout}
+                variant="outline"
+                className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white transition-all duration-200"
+              >
+                <LogOut size={16} />
+                Logout
+              </Button>
+            </div>
           </header>
 
-          {/* Upload Section */}
-          <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3 text-white">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Upload size={20} className="text-white" />
-              </div>
-              Upload Files
-              <Zap className="w-5 h-5 text-yellow-300 animate-pulse" />
-            </h2>
-          
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-white/30 border-dashed rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition-all duration-200 backdrop-blur-sm">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                    <Folder className="w-16 h-16 mb-4 text-white/60" />
-                    {files && files.length > 0 ? (
-                      <>
-                        <p className="mb-2 text-sm text-white/80 font-semibold">{files.length} file(s) selected</p>
-                        <ul className="text-xs text-white/60 max-h-32 overflow-y-auto">
-                          {Array.from(files).map((f, index) => (
-                            <li key={index}>{f.name}</li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : (
-                      <>
-                        <p className="mb-2 text-sm text-white/80"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p className="text-xs text-white/60">Select multiple files at once</p>
-                      </>
+          {/* Main Content */}
+          {selectedShare ? (
+            <ShareDetails
+              share={selectedShare}
+              token={token!}
+              onBack={handleBackToShares}
+              onShareUpdated={handleShareUpdated}
+              onTokenExpired={handleTokenExpiration}
+            />
+          ) : currentView === 'upload' ? (
+            <div>
+              {/* Upload Section */}
+              <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl">
+                <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3 text-white">
+                  <div className="p-2 bg-white/10 rounded-lg">
+                    <Upload size={20} className="text-white" />
+                  </div>
+                  Upload Files
+                  <Zap className="w-5 h-5 text-yellow-300 animate-pulse" />
+                </h2>
+              
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-white/30 border-dashed rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition-all duration-200 backdrop-blur-sm">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                        <Folder className="w-16 h-16 mb-4 text-white/60" />
+                        {files && files.length > 0 ? (
+                          <div>
+                            <p className="mb-2 text-sm text-white/80 font-semibold">{files.length} file(s) selected</p>
+                            <ul className="text-xs text-white/60 max-h-32 overflow-y-auto">
+                              {Array.from(files).map((f, index) => (
+                                <li key={index}>{f.name}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="mb-2 text-sm text-white/80"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p className="text-xs text-white/60">Select multiple files at once</p>
+                          </div>
+                        )}
+                      </div>
+                      <input 
+                        ref={fileInputRef}
+                        type="file" 
+                        multiple 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                      />
+                    </label>
+                  </div> 
+
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <h4 className="text-sm font-semibold mb-4 text-white/80 flex items-center gap-2">
+                      <Lock size={16} />
+                      Share Settings (optional)
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-white/80">
+                          <Lock size={16} /> Password Protection
+                        </Label>
+                        <Input
+                          type="password"
+                          value={shareSettings.password}
+                          onChange={(e) => setShareSettings(prev => ({ ...prev, password: e.target.value }))}
+                          placeholder="Set a password"
+                          className="bg-white/20 border-white/30 text-white placeholder-white/80 focus:border-white/50 focus:ring-white/30 font-medium"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-white/80">
+                          <Clock size={16} /> Expiration Time
+                        </Label>
+                        <Select
+                          value={shareSettings.expires_minutes}
+                          onValueChange={(value) => setShareSettings(prev => ({ ...prev, expires_minutes: value }))}
+                        >
+                          <SelectTrigger className="bg-white/20 border-white/30 text-white font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white/20 border-white/30 text-white backdrop-blur-lg">
+                            <SelectItem value="5">5 minutes</SelectItem>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="60">1 hour</SelectItem>
+                            <SelectItem value="360">6 hours</SelectItem>
+                            <SelectItem value="720">12 hours</SelectItem>
+                            <SelectItem value="1440">1 day</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <Alert className="bg-red-500/20 border-red-500/50 text-white">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button 
+                    onClick={handleUpload} 
+                    disabled={!files || isLoading}
+                    className="w-full bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg relative"
+                  >
+                    {isLoading && (
+                      <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
+                      </div>
+                    )}
+                    <span className={isLoading ? 'opacity-50' : ''}>
+                      {isLoading ? 'Uploading...' : 'Upload Files'}
+                    </span>
+                  </Button>
+                </div>
+              </section>
+
+              {uploadResult && (
+                <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="mb-6 pb-6 border-b border-white/10">
+                    <h3 className="text-xl font-semibold text-green-300 mb-2 flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      Share Created Successfully!
+                    </h3>
+                    <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10 mb-4">
+                      <Link size={16} className="text-white/60" />
+                      <a href={uploadResult.share_link} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 text-sm break-all">{uploadResult.share_link}</a>
+                    </div>
+
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <h4 className="text-sm font-semibold mb-2 text-white/80">Files in this Share:</h4>
+                      <ul className="space-y-1">
+                        {uploadResult.files.map((file, index) => (
+                          <li key={index} className="flex items-center gap-2 text-sm text-white/60">
+                            <FileText size={14} /> {file.filename}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-md font-medium text-white flex items-center gap-2">
+                      <Lock size={16} />
+                      Share Settings
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-white/80">
+                          <Lock size={16} /> Password Protection (Optional)
+                        </Label>
+                        <Input 
+                          type="password" 
+                          value={shareSettings.password}
+                          onChange={(e) => setShareSettings(prev => ({ ...prev, password: e.target.value }))}
+                          placeholder="Set a password"
+                          className="bg-white/20 border-white/30 text-white placeholder-white/80 focus:border-white/50 focus:ring-white/30 font-medium"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-white/80">
+                          <Clock size={16} /> Expiration Time
+                        </Label>
+                        <Select 
+                          value={shareSettings.expires_minutes}
+                          onValueChange={(value) => setShareSettings(prev => ({ ...prev, expires_minutes: value }))}
+                        >
+                          <SelectTrigger className="bg-white/20 border-white/30 text-white font-medium">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white/20 border-white/30 text-white backdrop-blur-lg">
+                            <SelectItem value="5">5 minutes</SelectItem>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="60">1 hour</SelectItem>
+                            <SelectItem value="360">6 hours</SelectItem>
+                            <SelectItem value="720">12 hours</SelectItem>
+                            <SelectItem value="1440">1 day</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={updateShareSettings}
+                      disabled={isUpdatingSettings}
+                      className="bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg flex items-center gap-2 relative"
+                    >
+                      {isUpdatingSettings && (
+                        <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
+                        </div>
+                      )}
+                      <span className={isUpdatingSettings ? 'opacity-50' : ''}>
+                        {isUpdatingSettings ? 'Saving...' : 'Save Settings'}
+                      </span>
+                    </Button>
+                    
+                    {shareUpdateMsg && (
+                      <Alert className={shareUpdateMsg.includes('Error') ? 'bg-red-500/20 border-red-500/50 text-white' : 'bg-green-500/20 border-green-500/50 text-white'}>
+                        <AlertDescription>
+                          {shareUpdateMsg}
+                        </AlertDescription>
+                      </Alert>
                     )}
                   </div>
-                  <input 
-                    ref={fileInputRef}
-                    type="file" 
-                    multiple 
-                    className="hidden" 
-                    onChange={handleFileChange} 
-                  />
-                </label>
-              </div> 
-
-              {error && (
-                <Alert className="bg-red-500/20 border-red-500/50 text-white">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button 
-                onClick={handleUpload} 
-                disabled={!files || isLoading}
-                className="w-full bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg relative"
-              >
-                {isLoading && (
-                  <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
-                  </div>
-                )}
-                <span className={isLoading ? 'opacity-50' : ''}>
-                  {isLoading ? 'Uploading...' : 'Upload Files'}
-                </span>
-              </Button>
-            </div>
-          </section>
-
-        {uploadResult && (
-          <section className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-6 pb-6 border-b border-white/10">
-              <h3 className="text-xl font-semibold text-green-300 mb-2 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Share Created Successfully!
-              </h3>
-              <div className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10 mb-4">
-                <Link size={16} className="text-white/60" />
-                <a href={uploadResult.share_link} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200 text-sm break-all">{uploadResult.share_link}</a>
-              </div>
-
-              <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                <h4 className="text-sm font-semibold mb-2 text-white/80">Files in this Share:</h4>
-                <ul className="space-y-1">
-                  {uploadResult.files.map((file, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-white/60">
-                      <FileText size={14} /> {file.filename}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="text-md font-medium text-white flex items-center gap-2">
-                <Lock size={16} />
-                Share Settings
-              </h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-white/80">
-                    <Lock size={16} /> Password Protection (Optional)
-                  </Label>
-                  <Input 
-                    type="password" 
-                    value={shareSettings.password}
-                    onChange={(e) => setShareSettings(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Set a password"
-                    className="bg-white/20 border-white/30 text-white placeholder-white/80 focus:border-white/50 focus:ring-white/30 font-medium"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-white/80">
-                    <Clock size={16} /> Expiration Time
-                  </Label>
-                  <Select 
-                    value={shareSettings.expires_minutes}
-                    onValueChange={(value) => setShareSettings(prev => ({ ...prev, expires_minutes: value }))}
-                  >
-                    <SelectTrigger className="bg-white/20 border-white/30 text-white font-medium">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white/20 border-white/30 text-white backdrop-blur-lg">
-                      <SelectItem value="5">5 minutes</SelectItem>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="360">6 hours</SelectItem>
-                      <SelectItem value="720">12 hours</SelectItem>
-                      <SelectItem value="1440">1 day</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <Button 
-                onClick={updateShareSettings}
-                disabled={isUpdatingSettings}
-                className="bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg flex items-center gap-2 relative"
-              >
-                {isUpdatingSettings && (
-                  <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
-                  </div>
-                )}
-                <span className={isUpdatingSettings ? 'opacity-50' : ''}>
-                  {isUpdatingSettings ? 'Saving...' : 'Save Settings'}
-                </span>
-              </Button>
-              
-              {shareUpdateMsg && (
-                <Alert className={shareUpdateMsg.includes('Error') ? 'bg-red-500/20 border-red-500/50 text-white' : 'bg-green-500/20 border-green-500/50 text-white'}>
-                  <AlertDescription>
-                    {shareUpdateMsg}
-                  </AlertDescription>
-                </Alert>
+                </section>
               )}
             </div>
-          </section>
-        )}
+          ) : (
+            <ShareList
+              token={token!}
+              onShareSelect={handleShareSelect}
+              onTokenExpired={handleTokenExpiration}
+            />
+          )}
         </div>
       </div>
       
