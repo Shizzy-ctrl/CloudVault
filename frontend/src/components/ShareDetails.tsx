@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { getShareDetails, addFilesToShare, deleteFileFromShare, apiRequest, ApiError } from '../lib/api'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Alert, AlertDescription } from './ui/alert'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
 import { Share } from './Dashboard'
 import { 
   ArrowLeft, 
@@ -23,13 +24,15 @@ interface ShareDetailsProps {
   share: Share
   token: string
   onBack: () => void
+  onGoUpload: () => void
   onShareUpdated: () => void
   onTokenExpired: () => void
 }
 
-export default function ShareDetails({ share: initialShare, token, onBack, onShareUpdated, onTokenExpired }: ShareDetailsProps) {
+export default function ShareDetails({ share: initialShare, token, onBack, onGoUpload, onShareUpdated, onTokenExpired }: ShareDetailsProps) {
   const [share, setShare] = useState(initialShare)
   const [loading, setLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -40,6 +43,32 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
   })
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
   const [deletingFileId, setDeletingFileId] = useState<number | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [pendingDeleteFileId, setPendingDeleteFileId] = useState<number | null>(null)
+  const [pendingDeleteFileName, setPendingDeleteFileName] = useState<string>('')
+
+  const refreshShareDetails = async (publicId: string) => {
+    setIsRefreshing(true)
+    try {
+      const updatedShare = await getShareDetails(publicId, token)
+      setShare(updatedShare)
+      setError('')
+    } catch (e) {
+      const error = e as ApiError
+      if (error.isTokenExpired) {
+        onTokenExpired()
+      } else {
+        setError(error instanceof Error ? error.message : 'Failed to load share details')
+      }
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    setShare(initialShare)
+    refreshShareDetails(initialShare.public_id)
+  }, [initialShare.public_id])
 
   const handleAddFiles = async () => {
     if (!files || files.length === 0) return
@@ -68,8 +97,6 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
   }
 
   const handleDeleteFile = async (fileId: number) => {
-    if (!confirm('Are you sure you want to delete this file?')) return
-    
     setDeletingFileId(fileId)
     try {
       await deleteFileFromShare(share.public_id, fileId, token)
@@ -135,6 +162,21 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
     setFiles(e.target.files)
   }
 
+  const requestDeleteFile = (fileId: number, filename: string) => {
+    setPendingDeleteFileId(fileId)
+    setPendingDeleteFileName(filename)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (pendingDeleteFileId === null) return
+    const fileId = pendingDeleteFileId
+    setIsDeleteDialogOpen(false)
+    setPendingDeleteFileId(null)
+    setPendingDeleteFileName('')
+    await handleDeleteFile(fileId)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -147,6 +189,15 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Shares
+        </Button>
+        <Button
+          onClick={onGoUpload}
+          variant="outline"
+          size="sm"
+          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+        >
+          <Upload className="w-4 h-4" />
+          Upload
         </Button>
         <h3 className="text-xl font-semibold text-white">
           Share Details: {share.public_id.substring(0, 8)}...
@@ -317,8 +368,12 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
           <FileText className="w-5 h-5" />
           Files ({share.files?.length || 0})
         </h4>
-        
-        {(!share.files || share.files.length === 0) ? (
+
+        {isRefreshing ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+          </div>
+        ) : (!share.files || share.files.length === 0) ? (
           <p className="text-white/60 text-center py-4">No files in this share yet.</p>
         ) : (
           <div className="space-y-2">
@@ -332,7 +387,7 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
                   <span className="text-white/80">{file.filename}</span>
                 </div>
                 <Button
-                  onClick={() => handleDeleteFile(file.id)}
+                  onClick={() => requestDeleteFile(file.id, file.filename)}
                   disabled={deletingFileId === file.id}
                   variant="outline"
                   size="sm"
@@ -349,6 +404,32 @@ export default function ShareDetails({ share: initialShare, token, onBack, onSha
           </div>
         )}
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-white/10 border-white/20 text-white backdrop-blur-lg">
+          <DialogHeader>
+            <DialogTitle>Delete file?</DialogTitle>
+            <DialogDescription className="text-white/70">
+              This will permanently remove {pendingDeleteFileName || 'this file'} from the share.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500/80 text-white hover:bg-red-500"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

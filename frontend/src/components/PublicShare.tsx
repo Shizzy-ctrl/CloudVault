@@ -58,6 +58,7 @@ export default function PublicShare() {
       setPassword('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to unlock share')
+      setPassword('')
     } finally {
       setLoading(false)
     }
@@ -123,7 +124,7 @@ export default function PublicShare() {
               )}
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2 text-center">
               {loading ? (
                 'Loading...'
               ) : locked ? (
@@ -136,7 +137,7 @@ export default function PublicShare() {
             </h2>
             
             {error && (
-              <div className="text-red-300 mb-6 bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+              <div className="text-red-300 mb-6 bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-center">
                 {error}
               </div>
             )}
@@ -145,7 +146,7 @@ export default function PublicShare() {
               <>
                 {locked ? (
                   <>
-                    <p className="text-white/70 mb-8">This share is password protected. Enter password to access files.</p>
+                    <p className="text-white/70 mb-8 text-center">This share is password protected. Enter password to access files.</p>
                     <form onSubmit={unlock} className="space-y-4 max-w-sm mx-auto">
                       <div className="relative">
                         <input 

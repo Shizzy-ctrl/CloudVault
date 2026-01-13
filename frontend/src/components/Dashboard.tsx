@@ -44,6 +44,16 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState<'upload' | 'shares'>('upload')
   const [selectedShare, setSelectedShare] = useState<Share | null>(null)
 
+  async function applyShareSettings(publicId: string, settings: { password: string; expires_minutes: string }) {
+    const body = {
+      public_id: publicId,
+      password: settings.password ? settings.password : null,
+      expires_minutes: settings.expires_minutes ? parseInt(settings.expires_minutes) : null
+    }
+
+    await apiRequest(`/share/${publicId}`, 'POST', body, token!)
+  }
+
   async function handleUpload() {
     if (!files || files.length === 0) return
     setIsLoading(true)
@@ -51,8 +61,23 @@ export default function Dashboard() {
       const result = await uploadFiles(files, token!)
       setUploadResult(result)
       setError('')
+      const shouldApplySettings = Boolean(shareSettings.password) || shareSettings.expires_minutes !== '30'
+      if (shouldApplySettings) {
+        try {
+          await applyShareSettings(result.public_id, shareSettings)
+          setShareUpdateMsg('Files uploaded and settings applied!')
+        } catch (settingsError) {
+          const error = settingsError as ApiError
+          if (error.isTokenExpired) {
+            handleTokenExpiration()
+          } else {
+            setShareUpdateMsg('Files uploaded, but settings update failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
+          }
+        }
+      } else {
+        setShareUpdateMsg('Files uploaded successfully!')
+      }
       setShareSettings({ password: '', expires_minutes: '30' })
-      setShareUpdateMsg('Files uploaded successfully!')
     } catch (e) {
       const error = e as ApiError
       if (error.isTokenExpired) {
@@ -70,13 +95,7 @@ export default function Dashboard() {
     if (!uploadResult) return
     setIsUpdatingSettings(true)
     try {
-      const body = {
-        public_id: uploadResult.public_id,
-        password: shareSettings.password ? shareSettings.password : null,
-        expires_minutes: shareSettings.expires_minutes ? parseInt(shareSettings.expires_minutes) : null
-      }
-      
-      await apiRequest(`/share/${uploadResult.public_id}`, 'POST', body, token!)
+      await applyShareSettings(uploadResult.public_id, shareSettings)
       setShareUpdateMsg('Settings updated successfully!')
     } catch (e) {
       const error = e as ApiError
@@ -100,6 +119,16 @@ export default function Dashboard() {
 
   const handleBackToShares = () => {
     setSelectedShare(null)
+  }
+
+  const handleGoToUpload = () => {
+    setSelectedShare(null)
+    setCurrentView('upload')
+  }
+
+  const handleViewChange = (view: 'upload' | 'shares') => {
+    setSelectedShare(null)
+    setCurrentView(view)
   }
 
   const handleShareUpdated = () => {
@@ -142,26 +171,26 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-1">
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-1.5 shadow-lg">
                 <Button
-                  onClick={() => setCurrentView('upload')}
+                  onClick={() => handleViewChange('upload')}
                   variant={currentView === 'upload' ? 'default' : 'ghost'}
-                  className={`flex items-center gap-2 ${
+                  className={`flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 ${
                     currentView === 'upload' 
-                      ? 'bg-white text-purple-900' 
-                      : 'text-white hover:bg-white/10'
+                      ? 'bg-gradient-to-r from-yellow-300 to-orange-400 text-purple-900 shadow-md' 
+                      : 'text-white hover:bg-white/15'
                   }`}
                 >
                   <Upload size={16} />
                   Upload
                 </Button>
                 <Button
-                  onClick={() => setCurrentView('shares')}
+                  onClick={() => handleViewChange('shares')}
                   variant={currentView === 'shares' ? 'default' : 'ghost'}
-                  className={`flex items-center gap-2 ${
+                  className={`flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 ${
                     currentView === 'shares' 
-                      ? 'bg-white text-purple-900' 
-                      : 'text-white hover:bg-white/10'
+                      ? 'bg-gradient-to-r from-cyan-300 to-blue-400 text-purple-900 shadow-md' 
+                      : 'text-white hover:bg-white/15'
                   }`}
                 >
                   <List size={16} />
@@ -185,6 +214,7 @@ export default function Dashboard() {
               share={selectedShare}
               token={token!}
               onBack={handleBackToShares}
+              onGoUpload={handleGoToUpload}
               onShareUpdated={handleShareUpdated}
               onTokenExpired={handleTokenExpiration}
             />
@@ -322,72 +352,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-white flex items-center gap-2">
-                      <Lock size={16} />
-                      Share Settings
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-white/80">
-                          <Lock size={16} /> Password Protection (Optional)
-                        </Label>
-                        <Input 
-                          type="password" 
-                          value={shareSettings.password}
-                          onChange={(e) => setShareSettings(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Set a password"
-                          className="bg-white/20 border-white/30 text-white placeholder-white/80 focus:border-white/50 focus:ring-white/30 font-medium"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-white/80">
-                          <Clock size={16} /> Expiration Time
-                        </Label>
-                        <Select 
-                          value={shareSettings.expires_minutes}
-                          onValueChange={(value) => setShareSettings(prev => ({ ...prev, expires_minutes: value }))}
-                        >
-                          <SelectTrigger className="bg-white/20 border-white/30 text-white font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white/20 border-white/30 text-white backdrop-blur-lg">
-                            <SelectItem value="5">5 minutes</SelectItem>
-                            <SelectItem value="15">15 minutes</SelectItem>
-                            <SelectItem value="30">30 minutes</SelectItem>
-                            <SelectItem value="60">1 hour</SelectItem>
-                            <SelectItem value="360">6 hours</SelectItem>
-                            <SelectItem value="720">12 hours</SelectItem>
-                            <SelectItem value="1440">1 day</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <Button 
-                      onClick={updateShareSettings}
-                      disabled={isUpdatingSettings}
-                      className="bg-white text-purple-900 hover:bg-white/90 font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg flex items-center gap-2 relative"
-                    >
-                      {isUpdatingSettings && (
-                        <div className="absolute inset-0 bg-white/30 rounded-xl flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-900 border-t-transparent"></div>
-                        </div>
-                      )}
-                      <span className={isUpdatingSettings ? 'opacity-50' : ''}>
-                        {isUpdatingSettings ? 'Saving...' : 'Save Settings'}
-                      </span>
-                    </Button>
-                    
-                    {shareUpdateMsg && (
-                      <Alert className={shareUpdateMsg.includes('Error') ? 'bg-red-500/20 border-red-500/50 text-white' : 'bg-green-500/20 border-green-500/50 text-white'}>
-                        <AlertDescription>
-                          {shareUpdateMsg}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
+                  {shareUpdateMsg && (
+                    <Alert className={shareUpdateMsg.includes('Error') ? 'bg-red-500/20 border-red-500/50 text-white' : 'bg-green-500/20 border-green-500/50 text-white'}>
+                      <AlertDescription>
+                        {shareUpdateMsg}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </section>
               )}
             </div>

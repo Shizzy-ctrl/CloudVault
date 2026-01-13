@@ -38,6 +38,7 @@ export default function Login() {
       login(data.access_token, { username }, data.must_change_password)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed')
+      setPassword('')
     } finally {
       setIsLoading(false)
     }
