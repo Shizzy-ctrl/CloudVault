@@ -171,31 +171,33 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-1.5 shadow-lg">
-                <Button
-                  onClick={() => handleViewChange('upload')}
-                  variant={currentView === 'upload' ? 'default' : 'ghost'}
-                  className={`flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 ${
-                    currentView === 'upload' 
-                      ? 'bg-gradient-to-r from-yellow-300 to-orange-400 text-purple-900 shadow-md' 
-                      : 'text-white hover:bg-white/15'
-                  }`}
-                >
-                  <Upload size={16} />
-                  Upload
-                </Button>
-                <Button
-                  onClick={() => handleViewChange('shares')}
-                  variant={currentView === 'shares' ? 'default' : 'ghost'}
-                  className={`flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 ${
-                    currentView === 'shares' 
-                      ? 'bg-gradient-to-r from-cyan-300 to-blue-400 text-purple-900 shadow-md' 
-                      : 'text-white hover:bg-white/15'
-                  }`}
-                >
-                  <List size={16} />
-                  My Shares
-                </Button>
+              <div className="relative flex items-center">
+                <div className="flex items-center gap-1 rounded-2xl border border-white/20 bg-white/10 p-1.5 shadow-lg backdrop-blur-lg">
+                  <button
+                    onClick={() => handleViewChange('upload')}
+                    className={`group relative flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 whitespace-nowrap ${
+                      currentView === 'upload'
+                        ? 'bg-gradient-to-r from-yellow-300 to-orange-400 text-purple-900 shadow-md'
+                        : 'text-white hover:bg-white/15 active:bg-white/20'
+                    }`}
+                    type="button"
+                  >
+                    <Upload size={16} className={currentView === 'upload' ? 'text-purple-900' : 'text-white'} />
+                    Upload
+                  </button>
+                  <button
+                    onClick={() => handleViewChange('shares')}
+                    className={`group relative flex items-center justify-center gap-2 px-5 py-2.5 min-w-[140px] rounded-xl transition-all duration-200 whitespace-nowrap ${
+                      currentView === 'shares'
+                        ? 'bg-gradient-to-r from-cyan-300 to-blue-400 text-purple-900 shadow-md'
+                        : 'text-white hover:bg-white/15 active:bg-white/20'
+                    }`}
+                    type="button"
+                  >
+                    <List size={16} className={currentView === 'shares' ? 'text-purple-900' : 'text-white'} />
+                    My Shares
+                  </button>
+                </div>
               </div>
               <Button 
                 onClick={logout}
